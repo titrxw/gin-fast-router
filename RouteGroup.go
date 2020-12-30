@@ -1,61 +1,68 @@
 package gin_fast_router
 
+import "path"
+
 type RouteGroup struct {
 	basePath       string
 	middlewares    RouteMiddlewares
 	attributes     RouteAttributes
-	routeCollector RouteCollector
+	routeCollector *RouteCollector
 }
 
 func (group *RouteGroup) Group(basePath string, handler func(group *RouteGroup)) {
+	//slice map是指针类型, 在传递时虽然没有* 底层时按照指针传递 在Go语言中只存在值传递（要么是该值的副本，要么是指针的副本），不存在引用传递
+	cloneMiddlewares := make(RouteMiddlewares, len(group.middlewares))
+	copy(cloneMiddlewares, group.middlewares)
+	cloneAttributes := DeepCopy(group.attributes).(RouteAttributes)
+
 	childGroup := &RouteGroup{
-		basePath,
-		group.middlewares,
-		group.attributes,
+		path.Join(group.basePath, basePath),
+		cloneMiddlewares,
+		cloneAttributes,
 		group.routeCollector,
 	}
 
 	handler(childGroup)
 }
 
-func (group *RouteGroup) get(path string, handler RouteHandler) *RouteGroup {
-	return group.addRoute(MethodGet, path, handler)
+func (group *RouteGroup) Get(path string, handler RouteHandler) *RouteGroup {
+	return group.AddRoute(MethodGet, path, handler)
 }
 
-func (group *RouteGroup) post(path string, handler RouteHandler) *RouteGroup {
-	return group.addRoute(MethodPost, path, handler)
+func (group *RouteGroup) Post(path string, handler RouteHandler) *RouteGroup {
+	return group.AddRoute(MethodPost, path, handler)
 }
 
-func (group *RouteGroup) head(path string, handler RouteHandler) *RouteGroup {
-	return group.addRoute(MethodHead, path, handler)
+func (group *RouteGroup) Head(path string, handler RouteHandler) *RouteGroup {
+	return group.AddRoute(MethodHead, path, handler)
 }
 
-func (group *RouteGroup) put(path string, handler RouteHandler) *RouteGroup {
-	return group.addRoute(MethodPut, path, handler)
+func (group *RouteGroup) Put(path string, handler RouteHandler) *RouteGroup {
+	return group.AddRoute(MethodPut, path, handler)
 }
 
-func (group *RouteGroup) patch(path string, handler RouteHandler) *RouteGroup {
-	return group.addRoute(MethodPatch, path, handler)
+func (group *RouteGroup) Patch(path string, handler RouteHandler) *RouteGroup {
+	return group.AddRoute(MethodPatch, path, handler)
 }
 
-func (group *RouteGroup) delete(path string, handler RouteHandler) *RouteGroup {
-	return group.addRoute(MethodDelete, path, handler)
+func (group *RouteGroup) Delete(path string, handler RouteHandler) *RouteGroup {
+	return group.AddRoute(MethodDelete, path, handler)
 }
 
-func (group *RouteGroup) options(path string, handler RouteHandler) *RouteGroup {
-	return group.addRoute(MethodOptions, path, handler)
+func (group *RouteGroup) Options(path string, handler RouteHandler) *RouteGroup {
+	return group.AddRoute(MethodOptions, path, handler)
 }
 
-func (group *RouteGroup) addRoute(method string, path string, handler RouteHandler) *RouteGroup {
+func (group *RouteGroup) AddRoute(method string, path string, handler RouteHandler) *RouteGroup {
 	return group
 }
 
-func (group *RouteGroup) middleware(handler RouteMiddleware) *RouteGroup {
+func (group *RouteGroup) Middleware(handler RouteMiddleware) *RouteGroup {
 	group.middlewares = append(group.middlewares, handler)
 	return group
 }
 
-func (group *RouteGroup) attribute(name string, value interface{}) *RouteGroup {
+func (group *RouteGroup) Attribute(name string, value interface{}) *RouteGroup {
 	group.attributes[name] = value
 	return group
 }
