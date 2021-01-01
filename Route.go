@@ -10,8 +10,6 @@ type RouteInterface interface {
 }
 
 type Route struct {
-	RouteInterface
-
 	name        string
 	path        string
 	method      string
