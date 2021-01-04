@@ -1,27 +1,30 @@
 package gin_fast_router
 
-import "path"
+import (
+	"path"
+)
 
 type RouteGroup struct {
-	basePath       string
-	name           string
-	middlewares    RouteMiddlewares
-	routeCollector *RouteCollector
-	parentGroup    *RouteGroup
+	BasePath       string
+	RouteName      string
+	Middlewares    RouteMiddlewares
+	RouteCollector *RouteCollector
+	CurMiddlewares RouteMiddlewares
 }
 
 func (group *RouteGroup) Group(basePath string, handler func(group *RouteGroup)) {
 	//slice map是指针类型, 在传递时虽然没有* 底层时按照指针传递 在Go语言中只存在值传递（要么是该值的副本，要么是指针的副本），不存在引用传递
-	cloneMiddlewares := make(RouteMiddlewares, len(group.middlewares))
-	copy(cloneMiddlewares, group.middlewares)
 	//cloneAttributes := DeepCopy(group.attributes).(RouteAttributes)
+	cloneMiddlewares := make(RouteMiddlewares, len(group.Middlewares)+len(group.CurMiddlewares))
+	copy(cloneMiddlewares, group.Middlewares)
+	copy(cloneMiddlewares[len(group.Middlewares):], group.CurMiddlewares)
 
 	childGroup := &RouteGroup{
-		path.Join(group.basePath, basePath),
-		group.name,
+		path.Join(group.BasePath, basePath),
+		group.RouteName,
 		cloneMiddlewares,
-		group.routeCollector,
-		group,
+		group.RouteCollector,
+		make(RouteMiddlewares, 0),
 	}
 
 	handler(childGroup)
@@ -29,31 +32,31 @@ func (group *RouteGroup) Group(basePath string, handler func(group *RouteGroup))
 }
 
 func (group *RouteGroup) Get(path string, handler RouteHandler) {
-	group.AddRoute(MethodGet, path, handler)
+	group.addRoute(MethodGet, path, handler)
 }
 
 func (group *RouteGroup) Post(path string, handler RouteHandler) {
-	group.AddRoute(MethodPost, path, handler)
+	group.addRoute(MethodPost, path, handler)
 }
 
 func (group *RouteGroup) Head(path string, handler RouteHandler) {
-	group.AddRoute(MethodHead, path, handler)
+	group.addRoute(MethodHead, path, handler)
 }
 
 func (group *RouteGroup) Put(path string, handler RouteHandler) {
-	group.AddRoute(MethodPut, path, handler)
+	group.addRoute(MethodPut, path, handler)
 }
 
 func (group *RouteGroup) Patch(path string, handler RouteHandler) {
-	group.AddRoute(MethodPatch, path, handler)
+	group.addRoute(MethodPatch, path, handler)
 }
 
 func (group *RouteGroup) Delete(path string, handler RouteHandler) {
-	group.AddRoute(MethodDelete, path, handler)
+	group.addRoute(MethodDelete, path, handler)
 }
 
 func (group *RouteGroup) Options(path string, handler RouteHandler) {
-	group.AddRoute(MethodOptions, path, handler)
+	group.addRoute(MethodOptions, path, handler)
 }
 
 func (group *RouteGroup) any(path string, handler RouteHandler) {
@@ -66,42 +69,35 @@ func (group *RouteGroup) any(path string, handler RouteHandler) {
 	group.Patch(path, handler)
 }
 
-func (group *RouteGroup) AddRoute(method string, routePath string, handler RouteHandler) {
-	var cloneMiddlewares RouteMiddlewares
-
-	if group.parentGroup != nil {
-		cloneMiddlewares := make(RouteMiddlewares, len(group.middlewares)+len(group.parentGroup.middlewares))
-		copy(cloneMiddlewares, group.middlewares)
-		copy(cloneMiddlewares[len(group.middlewares):], group.parentGroup.middlewares)
-	} else {
-		cloneMiddlewares := make(RouteMiddlewares, len(group.middlewares))
-		copy(cloneMiddlewares, group.middlewares)
-	}
+func (group *RouteGroup) addRoute(method string, routePath string, handler RouteHandler) {
+	cloneMiddlewares := make(RouteMiddlewares, len(group.Middlewares)+len(group.CurMiddlewares))
+	copy(cloneMiddlewares, group.Middlewares)
+	copy(cloneMiddlewares[len(group.Middlewares):], group.CurMiddlewares)
 
 	route := &Route{
-		group.name,
-		path.Join(group.basePath, routePath),
+		group.RouteName,
+		path.Join(group.BasePath, routePath),
 		method,
 		handler,
 		cloneMiddlewares,
 		nil,
 	}
 
-	group.routeCollector.collect(route)
+	group.RouteCollector.collect(route)
 	group.resetRouteGroup()
 }
 
 func (group *RouteGroup) Name(name string) *RouteGroup {
-	group.name = name
+	group.RouteName = name
 	return group
 }
 
 func (group *RouteGroup) Middleware(handler RouteMiddleware) *RouteGroup {
-	group.middlewares = append(group.middlewares, handler)
+	group.CurMiddlewares = append(group.CurMiddlewares, handler)
 	return group
 }
 
 func (group *RouteGroup) resetRouteGroup() {
-	group.name = ""
-	group.middlewares = group.middlewares[0:0]
+	group.RouteName = ""
+	group.CurMiddlewares = group.CurMiddlewares[0:0]
 }
