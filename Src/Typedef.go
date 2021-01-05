@@ -1,7 +1,7 @@
-package gin_fast_router
+package Src
 
 type RouteHandler func()
 type RouteAttributes map[string]interface{}
 type RouteMiddleware RouteHandler
 type RouteMiddlewares []RouteMiddleware
-type RouteMap []*Route
+type RouteMap map[string]*Route

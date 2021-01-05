@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/titrxw/gin-router"
+	"github.com/titrxw/gin-router/Src"
 )
 
 func test() {
@@ -10,28 +10,33 @@ func test() {
 }
 
 func main() {
-	group := gin_fast_router.RouteGroup{
+	group := Src.RouteGroup{
 		"",
 		"",
-		make(gin_fast_router.RouteMiddlewares, 0),
-		&gin_fast_router.RouteCollector{
-			make(map[string]gin_fast_router.RouteMap),
+		make(Src.RouteMiddlewares, 0),
+		&Src.RouteCollector{
+			make(map[string]Src.RouteMap),
 		},
-		make(gin_fast_router.RouteMiddlewares, 0),
+		make(Src.RouteMiddlewares, 0),
 	}
 
 	group.Get("test", test)
-	group.Middleware(test).Group("/er", func(group *gin_fast_router.RouteGroup) {
+	group.Middleware(test).Group("/er", func(group *Src.RouteGroup) {
 		group.Post("/erdfgf", test)
-		group.Group("/fdg", func(group *gin_fast_router.RouteGroup) {
+		group.Group("/fdg", func(group *Src.RouteGroup) {
 			group.Delete("/fgh", test)
 		})
-		group.Middleware(test).Group("/hgjk", func(group *gin_fast_router.RouteGroup) {
+		group.Middleware(test).Group("/hgjk", func(group *Src.RouteGroup) {
 			group.Head("/he", test)
 		})
 		group.Post("/erdfgferw", test)
 	})
 
-	fmt.Println((group.RouteCollector.RouteMethodMap[gin_fast_router.MethodHead][0]))
+	fmt.Println((group.RouteCollector.RouteMethodMap[Src.MethodHead]))
 
+	routeDispatcher := Src.RouteDispatcher{
+		group.RouteCollector,
+	}
+	route := routeDispatcher.Dispatcher(Src.MethodPost, "/er/erdfgferw")
+	fmt.Println(route)
 }

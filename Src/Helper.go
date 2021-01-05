@@ -1,4 +1,4 @@
-package gin_fast_router
+package Src
 
 func DeepCopy(value interface{}) interface{} {
 	if valueMap, ok := value.(map[string]interface{}); ok {

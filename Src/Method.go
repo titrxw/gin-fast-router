@@ -1,4 +1,4 @@
-package gin_fast_router
+package Src
 
 const (
 	MethodGet     = "GET"

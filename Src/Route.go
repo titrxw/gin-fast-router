@@ -1,4 +1,4 @@
-package gin_fast_router
+package Src
 
 type RouteInterface interface {
 	GetName() string
